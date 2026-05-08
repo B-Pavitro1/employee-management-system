@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            color: green;
+            font-weight: bold;
+        }
+        .endpoints {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #e8e8e8;
+            padding: 2px 5px;
+            border-radius: 3px;
+            display: block;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Management System API</h1>
+        <p>Status: <span class="status">✓ Running</span></p>
+        <p>Server Port: <strong>8081</strong></p>
+        
+        <div class="endpoints">
+            <h3>Available Endpoints:</h3>
+            <code>GET  /api/employees</code>
+            <code>GET  /api/employees/{id}</code>
+            <code>POST /api/employees</code>
+            <code>PUT  /api/employees/{id}</code>
+            <code>DELETE /api/employees/{id}</code>
+            <code>GET  /api/employees/department/{department}</code>
+            <code>GET  /api/employees/search?keyword={keyword}</code>
+            <code>GET  /api/employees/active</code>
+            <code>GET  /api/employees/stats/department</code>
+        </div>
+    </div>
+</body>
+</html>
