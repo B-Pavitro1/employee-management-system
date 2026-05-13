@@ -56,55 +56,28 @@ pipeline {
         stage('Deploy to EC2 via SSH') {
             steps {
                 script {
+                    // Capture environment variables
+                    def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    
                     sshagent(['ec2-docker-key']) {
-                        // Test SSH connection first
                         sh """
-                            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ec2-user@98.83.147.216 "echo 'SSH connection successful'"
-                        """
-                        
-                        // Deploy with detailed error output
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 << 'EOF'
-                                set -e  # Exit on any error
-                                set -x  # Print commands being executed
+                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 << 'ENDSSH'
+                                # Pull and run container on EC2
+                                sudo docker stop employee-app || true
+                                sudo docker rm employee-app || true
+                                sudo docker system prune -f
+                                sudo docker pull ${imageName}
+                                sudo docker run -d --name employee-app -p 8080:8080 ${imageName}
                                 
-                                echo "=== Starting deployment ==="
-                                
-                                # Check if docker is installed
-                                if ! command -v docker &> /dev/null; then
-                                    echo "Docker is not installed. Please install Docker first."
-                                    exit 1
-                                fi
-                                
-                                # Login to Docker Hub (if needed)
-                                # echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-                                
-                                # Stop and remove old container
-                                echo "Stopping old container if exists..."
-                                docker stop my-app-container || true
-                                docker rm my-app-container || true
-                                
-                                # Pull latest image
-                                echo "Pulling image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                                docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
-                                
-                                # Run new container
-                                echo "Starting new container..."
-                                docker run -d -p 8080:8080 --name my-app-container ${DOCKER_IMAGE}:${DOCKER_TAG}
-                                
-                                # Verify container is running
-                                sleep 2
-                                if docker ps | grep -q my-app-container; then
-                                    echo "Container started successfully!"
-                                    docker ps | grep my-app-container
+                                # Check if container is running
+                                if sudo docker ps | grep -q employee-app; then
+                                    echo "Container deployed successfully!"
+                                    sudo docker ps | grep employee-app
                                 else
-                                    echo "Container failed to start. Showing logs:"
-                                    docker logs my-app-container || true
+                                    echo "Container deployment failed!"
                                     exit 1
                                 fi
-                                
-                                echo "=== Deployment completed ==="
-EOF
+        ENDSSH
                         """
                     }
                 }
