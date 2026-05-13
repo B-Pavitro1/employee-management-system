@@ -24,11 +24,8 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                // Run a simple version check first. This is a great test.
-                sh 'mvn -version'
-                
-                // Clean and package the application, skipping tests for speed.
-                sh 'mvn clean package -DskipTests'
+                // Clean and package the application, skipping tests for speed
+                bat 'mvn clean package -DskipTests'
                 echo 'Maven build successful. JAR file created in target/'
             }
         }
