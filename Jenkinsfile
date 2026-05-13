@@ -56,15 +56,54 @@ pipeline {
         stage('Deploy to EC2 via SSH') {
             steps {
                 script {
-                    // Use the SSH key we added to Jenkins
                     sshagent(['ec2-docker-key']) {
-                        // SSH into EC2, stop and remove the old container, then run the new one
+                        // Test SSH connection first
                         sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 << EOF
+                            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ec2-user@98.83.147.216 "echo 'SSH connection successful'"
+                        """
+                        
+                        // Deploy with detailed error output
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 << 'EOF'
+                                set -e  # Exit on any error
+                                set -x  # Print commands being executed
+                                
+                                echo "=== Starting deployment ==="
+                                
+                                # Check if docker is installed
+                                if ! command -v docker &> /dev/null; then
+                                    echo "Docker is not installed. Please install Docker first."
+                                    exit 1
+                                fi
+                                
+                                # Login to Docker Hub (if needed)
+                                # echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+                                
+                                # Stop and remove old container
+                                echo "Stopping old container if exists..."
                                 docker stop my-app-container || true
                                 docker rm my-app-container || true
+                                
+                                # Pull latest image
+                                echo "Pulling image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
                                 docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                                
+                                # Run new container
+                                echo "Starting new container..."
                                 docker run -d -p 8080:8080 --name my-app-container ${DOCKER_IMAGE}:${DOCKER_TAG}
+                                
+                                # Verify container is running
+                                sleep 2
+                                if docker ps | grep -q my-app-container; then
+                                    echo "Container started successfully!"
+                                    docker ps | grep my-app-container
+                                else
+                                    echo "Container failed to start. Showing logs:"
+                                    docker logs my-app-container || true
+                                    exit 1
+                                fi
+                                
+                                echo "=== Deployment completed ==="
 EOF
                         """
                     }
