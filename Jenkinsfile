@@ -56,28 +56,40 @@ pipeline {
         stage('Deploy to EC2 via SSH') {
             steps {
                 script {
-                    // Capture environment variables
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
                     
+                    // Test SSH connection first
                     sshagent(['ec2-docker-key']) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 << 'ENDSSH'
-                                # Pull and run container on EC2
-                                sudo docker stop employee-app || true
-                                sudo docker rm employee-app || true
-                                sudo docker system prune -f
+                            echo "Testing SSH connection..."
+                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 "echo 'SSH connection successful'"
+                            
+                            echo "Deploying with image: ${imageName}"
+                            
+                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 "
+                                set -x  # Enable command tracing
+                                
+                                # Stop and remove existing container
+                                sudo docker stop employee-app 2>/dev/null || echo 'No running container found'
+                                sudo docker rm employee-app 2>/dev/null || echo 'No container to remove'
+                                
+                                # Pull latest image
                                 sudo docker pull ${imageName}
+                                
+                                # Run new container
                                 sudo docker run -d --name employee-app -p 8080:8080 ${imageName}
                                 
-                                # Check if container is running
+                                # Verify deployment
+                                sleep 5
                                 if sudo docker ps | grep -q employee-app; then
-                                    echo "Container deployed successfully!"
+                                    echo '✅ Container deployed successfully!'
                                     sudo docker ps | grep employee-app
                                 else
-                                    echo "Container deployment failed!"
+                                    echo '❌ Container deployment failed!'
+                                    sudo docker logs employee-app --tail 50 2>/dev/null || echo 'No logs available'
                                     exit 1
                                 fi
-        ENDSSH
+                            "
                         """
                     }
                 }
