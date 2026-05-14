@@ -56,40 +56,39 @@ pipeline {
         stage('Deploy to EC2 via SSH') {
             steps {
                 script {
+                    // Capture environment variables
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
                     
-                    // Test SSH connection first
                     sshagent(['ec2-docker-key']) {
+                        // Write deploy script to a temporary file
                         sh """
-                            echo "Testing SSH connection..."
-                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 "echo 'SSH connection successful'"
+                            cat > /tmp/deploy.sh << 'EOF'
+                            #!/bin/bash
+                            set -e
+                            echo "Pulling Docker image: ${imageName}"
+                            sudo docker stop employee-app || true
+                            sudo docker rm employee-app || true
+                            sudo docker system prune -f
+                            sudo docker pull ${imageName}
+                            sudo docker run -d --name employee-app -p 8080:8080 ${imageName}
+
+                            if sudo docker ps | grep -q employee-app; then
+                                echo "Container deployed successfully!"
+                                sudo docker ps | grep employee-app
+                            else
+                                echo "Container deployment failed!"
+                                exit 1
+                            fi
+                            EOF
                             
-                            echo "Deploying with image: ${imageName}"
+                            # Copy the script to EC2
+                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ec2-user@98.83.147.216:/tmp/deploy.sh
                             
-                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 "
-                                set -x  # Enable command tracing
-                                
-                                # Stop and remove existing container
-                                sudo docker stop employee-app 2>/dev/null || echo 'No running container found'
-                                sudo docker rm employee-app 2>/dev/null || echo 'No container to remove'
-                                
-                                # Pull latest image
-                                sudo docker pull ${imageName}
-                                
-                                # Run new container
-                                sudo docker run -d --name employee-app -p 8080:8080 ${imageName}
-                                
-                                # Verify deployment
-                                sleep 5
-                                if sudo docker ps | grep -q employee-app; then
-                                    echo '✅ Container deployed successfully!'
-                                    sudo docker ps | grep employee-app
-                                else
-                                    echo '❌ Container deployment failed!'
-                                    sudo docker logs employee-app --tail 50 2>/dev/null || echo 'No logs available'
-                                    exit 1
-                                fi
-                            "
+                            # Execute the script on EC2
+                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+                            
+                            # Clean up local temp file
+                            rm -f /tmp/deploy.sh
                         """
                     }
                 }
