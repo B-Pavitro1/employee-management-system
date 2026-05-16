@@ -59,7 +59,7 @@ pipeline {
                     // Capture environment variables
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
                     
-                    sshagent(['ec2-docker-key']) {
+                    sshagent(['ec2-dev-key']) {
                         // Write deploy script to a temporary file
                         sh """
                             cat > /tmp/deploy.sh << 'EOF'
@@ -82,10 +82,10 @@ pipeline {
                             EOF
                             
                             # Copy the script to EC2
-                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ec2-user@98.83.147.216:/tmp/deploy.sh
+                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ec2-user@13.222.175.126:/tmp/deploy.sh
                             
                             # Execute the script on EC2
-                            ssh -o StrictHostKeyChecking=no ec2-user@98.83.147.216 "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+                            ssh -o StrictHostKeyChecking=no ec2-user@13.222.175.126 "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
                             
                             # Clean up local temp file
                             rm -f /tmp/deploy.sh
