@@ -70,7 +70,7 @@ pipeline {
                             sudo docker rm employee-app || true
                             sudo docker system prune -f
                             sudo docker pull ${imageName}
-                            sudo docker run -d --name employee-app -p 8080:8080 ${imageName}
+                            sudo docker run -d --name employee-app -p 9090:9090 ${imageName}
 
                             if sudo docker ps | grep -q employee-app; then
                                 echo "Container deployed successfully!"
