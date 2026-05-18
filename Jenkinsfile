@@ -3,7 +3,6 @@ pipeline {
 
     tools {
         maven 'Maven-3'    // Use the name you set in 'Global Tool Configuration'
-        jdk 'JDK-17'       // Use the name you set in 'Global Tool Configuration'
     }
 
     environment {
@@ -17,7 +16,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Pull the latest code from GitHub
-                git branch: 'main', credentialsId: 'github-deepovi', url: 'https://github.com/B-Pavitro1/employee-management-system'
+                git branch: 'main', credentialsId: 'github-pat', url: 'https://github.com/B-Pavitro1/employee-management-system'
                 echo 'Code successfully checked out.'
             }
         }
@@ -44,8 +43,8 @@ pipeline {
             steps {
                 script {
                     // Log in to Docker Hub (requires credentials in Jenkins)
-                    // You can add your Docker Hub credentials in Jenkins with ID 'docker-hub'
-                    docker.withRegistry('', 'docker-hub') {
+                    // You can add your Docker Hub credentials in Jenkins with ID 'docker-hub-cred'
+                    docker.withRegistry('', 'docker-hub-cred') {
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                         echo 'Image pushed to Docker Hub successfully.'
                     }
@@ -59,22 +58,22 @@ pipeline {
                     // Capture environment variables
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
                     
-                    sshagent(['ec2-dev-key']) {
+                    sshagent(['ec2-deploy-key']) {
                         // Write deploy script to a temporary file
                         sh """
                             cat > /tmp/deploy.sh << 'EOF'
                             #!/bin/bash
                             set -e
                             echo "Pulling Docker image: ${imageName}"
-                            sudo docker stop employee-app || true
-                            sudo docker rm employee-app || true
+                            sudo docker stop employee-management-app || true
+                            sudo docker rm employee-management-app || true
                             sudo docker system prune -f
                             sudo docker pull ${imageName}
-                            sudo docker run -d --name employee-app -p 9090:9090 ${imageName}
+                            sudo docker run -d --name employee-management-app -p 8080:8080 ${imageName}
 
-                            if sudo docker ps | grep -q employee-app; then
+                            if sudo docker ps | grep -q employee-management-app; then
                                 echo "Container deployed successfully!"
-                                sudo docker ps | grep employee-app
+                                sudo docker ps | grep employee-management-app
                             else
                                 echo "Container deployment failed!"
                                 exit 1

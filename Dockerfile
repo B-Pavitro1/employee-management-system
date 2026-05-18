@@ -1,5 +1,5 @@
-# Use Eclipse Temurin JDK 17 (official OpenJDK replacement)
-FROM eclipse-temurin:17-jdk-alpine
+# Use Eclipse Temurin JDK 21 (official OpenJDK replacement)
+FROM eclipse-temurin:21-jdk-alpine
 
 # Set the working directory inside the container
 WORKDIR /app
