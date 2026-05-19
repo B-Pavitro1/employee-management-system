@@ -9,7 +9,9 @@ pipeline {
         // Define variables for your Docker image and registry
         DOCKER_IMAGE = 'deepovi164/employee-management-system'
         DOCKER_TAG = "1.0.0-${env.BUILD_NUMBER}" // Use the Jenkins build number as a tag
-        // The path to your app. We'll use 'deploy' stage for details
+        
+        // Cache Maven repository
+        MAVEN_REPO = "${env.WORKSPACE}/.m2/repository"
     }
 
     stages {
@@ -23,9 +25,15 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                // Clean and package the application, skipping tests for speed.
-                sh 'mvn clean package -DskipTests'
-                echo 'Maven build successful. JAR file created in target/'
+                script {
+                    sh """
+                        mkdir -p ${MAVEN_REPO}
+                        mvn clean package -DskipTests \
+                            -Dmaven.repo.local=${MAVEN_REPO} \
+                            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                            -B
+                    """
+                }
             }
         }
 
