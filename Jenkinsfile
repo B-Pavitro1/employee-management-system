@@ -3,14 +3,11 @@ pipeline {
 
     tools {
         maven 'Maven-3'
+        jdk 'JDK-21'
     }
 
     environment {
-        // Set Java 21 as the JDK for this build
-        JAVA_HOME = '/usr/lib/jvm/java-21-openjdk-amd64'
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-        MAVEN_OPTS = '-Djava.home=/usr/lib/jvm/java-21-openjdk-amd64'
-        
+        // No need to set JAVA_HOME manually anymore
         DOCKER_IMAGE = 'deepovi164/employee-management-system'
         DOCKER_TAG = "1.0.0-${env.BUILD_NUMBER}"
         MAVEN_REPO = "${env.WORKSPACE}/.m2/repository"
@@ -24,21 +21,16 @@ pipeline {
             }
         }
 
-        stage('Check Environment') {
+        stage('Verify Java Version for Build') {
             steps {
                 script {
                     sh """
-                        echo "=== Environment Check ==="
-                        echo "JAVA_HOME: ${JAVA_HOME}"
-                        echo "PATH: ${PATH}"
-                        echo "MAVEN_OPTS: ${MAVEN_OPTS}"
-                        echo "=== Java Version ==="
+                        echo "=== Java Version for Build ==="
                         java -version
+                        echo "=== JAVA_HOME ==="
+                        echo \$JAVA_HOME
                         echo "=== Maven Version ==="
                         mvn -version
-                        echo "=== Maven's Java Home ==="
-                        mvn help:evaluate -Dexpression=java.home -q -DforceStdout
-                        echo "========================"
                     """
                 }
             }
@@ -52,7 +44,6 @@ pipeline {
                         mvn clean package -DskipTests \
                             -Dmaven.repo.local=${MAVEN_REPO} \
                             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                            -Djava.home=${JAVA_HOME} \
                             -B
                     """
                 }
@@ -89,6 +80,16 @@ pipeline {
                             cat > /tmp/deploy.sh << 'EOF'
                             #!/bin/bash
                             set -e
+                            
+                            echo "=== Setting up Java 21 on EC2 ==="
+                            if ! command -v java &> /dev/null || ! java -version 2>&1 | grep -q "version \\"21\\""; then
+                                echo "Installing Java 21..."
+                                sudo apt-get update
+                                sudo apt-get install -y openjdk-21-jdk
+                            fi
+                            
+                            java -version
+                            
                             echo "Pulling Docker image: ${imageName}"
                             sudo docker stop employee-management-app || true
                             sudo docker rm employee-management-app || true
