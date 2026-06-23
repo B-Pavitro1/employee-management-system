@@ -3,7 +3,6 @@ pipeline {
 
     tools {
         maven 'Maven-3'
-        jdk 'JDK-21'
     }
 
     environment {
@@ -18,21 +17,6 @@ pipeline {
             steps {
                 git branch: 'main', credentialsId: 'github-pat', url: 'https://github.com/B-Pavitro1/employee-management-system'
                 echo 'Code successfully checked out.'
-            }
-        }
-
-        stage('Verify Java Version for Build') {
-            steps {
-                script {
-                    sh """
-                        echo "=== Java Version for Build ==="
-                        java -version
-                        echo "=== JAVA_HOME ==="
-                        echo \$JAVA_HOME
-                        echo "=== Maven Version ==="
-                        mvn -version
-                    """
-                }
             }
         }
 
