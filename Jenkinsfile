@@ -2,13 +2,17 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven-3'    // Use the name you set in 'Global Tool Configuration'
+        maven 'Maven-3'
     }
 
     environment {
+        // Set Java 21 as the JDK for this build
+        JAVA_HOME = '/usr/lib/jvm/java-21-openjdk-amd64'
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        
         // Define variables for your Docker image and registry
         DOCKER_IMAGE = 'deepovi164/employee-management-system'
-        DOCKER_TAG = "1.0.0-${env.BUILD_NUMBER}" // Use the Jenkins build number as a tag
+        DOCKER_TAG = "1.0.0-${env.BUILD_NUMBER}"
         
         // Cache Maven repository
         MAVEN_REPO = "${env.WORKSPACE}/.m2/repository"
@@ -17,7 +21,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Pull the latest code from GitHub
                 git branch: 'main', credentialsId: 'github-pat', url: 'https://github.com/B-Pavitro1/employee-management-system'
                 echo 'Code successfully checked out.'
             }
@@ -27,6 +30,10 @@ pipeline {
             steps {
                 script {
                     sh """
+                        echo "Using Java:"
+                        java -version
+                        echo "JAVA_HOME: ${JAVA_HOME}"
+                        
                         mkdir -p ${MAVEN_REPO}
                         mvn clean package -DskipTests \
                             -Dmaven.repo.local=${MAVEN_REPO} \
@@ -40,7 +47,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image using the Dockerfile in the current directory
                     sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                     echo 'Docker image built successfully.'
                 }
@@ -50,8 +56,6 @@ pipeline {
         stage('Push Docker Image to Registry') {
             steps {
                 script {
-                    // Log in to Docker Hub (requires credentials in Jenkins)
-                    // You can add your Docker Hub credentials in Jenkins with ID 'docker-hub-cred'
                     docker.withRegistry('', 'docker-hub-cred') {
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                         echo 'Image pushed to Docker Hub successfully.'
@@ -63,11 +67,9 @@ pipeline {
         stage('Deploy to EC2 via SSH') {
             steps {
                 script {
-                    // Capture environment variables
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
                     
                     sshagent(['ec2-deploy-key']) {
-                        // Write deploy script to a temporary file
                         sh """
                             cat > /tmp/deploy.sh << 'EOF'
                             #!/bin/bash
@@ -88,13 +90,8 @@ pipeline {
                             fi
                             EOF
                             
-                            # Copy the script to EC2
                             scp -o StrictHostKeyChecking=no /tmp/deploy.sh ec2-user@54-89-162-75:/tmp/deploy.sh
-                            
-                            # Execute the script on EC2
                             ssh -o StrictHostKeyChecking=no ec2-user@54-89-162-75 "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
-                            
-                            # Clean up local temp file
                             rm -f /tmp/deploy.sh
                         """
                     }
@@ -105,7 +102,6 @@ pipeline {
     
     post {
         always {
-            // Clean up workspace to save disk space
             cleanWs()
             echo 'Pipeline finished. Workspace cleaned.'
         }
