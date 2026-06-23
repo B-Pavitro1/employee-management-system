@@ -65,33 +65,33 @@ pipeline {
                             #!/bin/bash
                             set -e
                             
-                            echo "=== Setting up Java 21 on EC2 ==="
-                            if ! command -v java &> /dev/null || ! java -version 2>&1 | grep -q "version \\"21\\""; then
-                                echo "Installing Java 21..."
-                                sudo apt-get update
-                                sudo apt-get install -y openjdk-21-jdk
-                            fi
+                            echo "=== Deploying Employee Management System ==="
+                            echo "Image: ${imageName}"
                             
-                            java -version
+                            echo "Stopping and removing old container..."
+                            docker stop employee-management-app || true
+                            docker rm employee-management-app || true
                             
-                            echo "Pulling Docker image: ${imageName}"
-                            sudo docker stop employee-management-app || true
-                            sudo docker rm employee-management-app || true
-                            sudo docker system prune -f
-                            sudo docker pull ${imageName}
-                            sudo docker run -d --name employee-management-app -p 8080:8080 ${imageName}
-
-                            if sudo docker ps | grep -q employee-management-app; then
-                                echo "Container deployed successfully!"
-                                sudo docker ps | grep employee-management-app
+                            echo "Cleaning up unused Docker resources..."
+                            docker system prune -f
+                            
+                            echo "Pulling latest image..."
+                            docker pull ${imageName}
+                            
+                            echo "Starting new container..."
+                            docker run -d --name employee-management-app -p 8080:8080 ${imageName}
+                            
+                            if docker ps | grep -q employee-management-app; then
+                                echo "✅ Container deployed successfully!"
+                                docker ps | grep employee-management-app
                             else
-                                echo "Container deployment failed!"
+                                echo "❌ Container deployment failed!"
                                 exit 1
                             fi
                             EOF
                             
-                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ec2-user@54-89-162-75:/tmp/deploy.sh
-                            ssh -o StrictHostKeyChecking=no ec2-user@54-89-162-75 "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ubuntu@54-89-162-75:/tmp/deploy.sh
+                            ssh -o StrictHostKeyChecking=no ubuntu@54-89-162-75 "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
                             rm -f /tmp/deploy.sh
                         """
                     }
