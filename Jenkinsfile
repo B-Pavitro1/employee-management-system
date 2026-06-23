@@ -9,12 +9,10 @@ pipeline {
         // Set Java 21 as the JDK for this build
         JAVA_HOME = '/usr/lib/jvm/java-21-openjdk-amd64'
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        MAVEN_OPTS = '-Djava.home=/usr/lib/jvm/java-21-openjdk-amd64'
         
-        // Define variables for your Docker image and registry
         DOCKER_IMAGE = 'deepovi164/employee-management-system'
         DOCKER_TAG = "1.0.0-${env.BUILD_NUMBER}"
-        
-        // Cache Maven repository
         MAVEN_REPO = "${env.WORKSPACE}/.m2/repository"
     }
 
@@ -26,18 +24,35 @@ pipeline {
             }
         }
 
+        stage('Check Environment') {
+            steps {
+                script {
+                    sh """
+                        echo "=== Environment Check ==="
+                        echo "JAVA_HOME: ${JAVA_HOME}"
+                        echo "PATH: ${PATH}"
+                        echo "MAVEN_OPTS: ${MAVEN_OPTS}"
+                        echo "=== Java Version ==="
+                        java -version
+                        echo "=== Maven Version ==="
+                        mvn -version
+                        echo "=== Maven's Java Home ==="
+                        mvn help:evaluate -Dexpression=java.home -q -DforceStdout
+                        echo "========================"
+                    """
+                }
+            }
+        }
+
         stage('Build with Maven') {
             steps {
                 script {
                     sh """
-                        echo "Using Java:"
-                        java -version
-                        echo "JAVA_HOME: ${JAVA_HOME}"
-                        
                         mkdir -p ${MAVEN_REPO}
                         mvn clean package -DskipTests \
                             -Dmaven.repo.local=${MAVEN_REPO} \
                             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                            -Djava.home=${JAVA_HOME} \
                             -B
                     """
                 }
