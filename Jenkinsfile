@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     tools {
+        jdk 'JDK-21'
         maven 'Maven-3'
     }
 
     environment {
-        // No need to set JAVA_HOME manually anymore
         DOCKER_IMAGE = 'deepovi164/employee-management-system'
         DOCKER_TAG = "1.0.0-${env.BUILD_NUMBER}"
         MAVEN_REPO = "${env.WORKSPACE}/.m2/repository"
@@ -17,6 +17,13 @@ pipeline {
             steps {
                 git branch: 'main', credentialsId: 'github-pat', url: 'https://github.com/B-Pavitro1/employee-management-system'
                 echo 'Code successfully checked out.'
+            }
+        }
+
+        stage('Check Java Version') {
+            steps {
+                sh 'java -version'
+                sh 'mvn -version'
             }
         }
 
