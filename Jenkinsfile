@@ -61,27 +61,6 @@ pipeline {
             }
         }
 
-        stage('Debug SSH Connection') {
-            steps {
-                script {
-                    sshagent(['ec2-deploy-key']) {
-                        sh """
-                            echo "=== Debugging SSH Connection ==="
-                            # Check SSH connectivity and permissions
-                            ssh -v -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "echo 'Connected'; ls -la ~/; whoami; hostname"
-                            
-                            # Check if docker is installed and running
-                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "which docker || echo 'Docker not found'"
-                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "sudo docker --version || echo 'Docker not installed or permission denied'"
-                            
-                            # Check if user is in docker group
-                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "groups"
-                        """
-                    }
-                }
-            }
-        }
-
         stage('Deploy to EC2 via SSH') {
             steps {
                 script {
