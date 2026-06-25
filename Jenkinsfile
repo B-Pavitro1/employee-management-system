@@ -68,14 +68,14 @@ pipeline {
                         sh """
                             echo "=== Debugging SSH Connection ==="
                             # Check SSH connectivity and permissions
-                            ssh -v -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "echo 'Connected'; ls -la ~/; whoami; hostname"
+                            ssh -v -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "echo 'Connected'; ls -la ~/; whoami; hostname"
                             
                             # Check if docker is installed and running
-                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "which docker || echo 'Docker not found'"
-                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "sudo docker --version || echo 'Docker not installed or permission denied'"
+                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "which docker || echo 'Docker not found'"
+                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "sudo docker --version || echo 'Docker not installed or permission denied'"
                             
                             # Check if user is in docker group
-                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "groups"
+                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "groups"
                         """
                     }
                 }
@@ -95,14 +95,14 @@ pipeline {
                                 
                                 # Test SSH connection with timeout
                                 echo "Testing SSH connection..."
-                                if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=10 ubuntu@ec2-54-89-162-75 "echo 'SSH connected successfully'"; then
+                                if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=10 ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "echo 'SSH connected successfully'"; then
                                     echo "❌ SSH connection failed!"
                                     exit 1
                                 fi
                                 
                                 # Verify Docker is installed on EC2
                                 echo "Checking Docker installation on EC2..."
-                                ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "docker --version || echo 'Docker not installed'"
+                                ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "docker --version || echo 'Docker not installed'"
                                 
                                 # Create deployment script with proper escaping
                                 cat > /tmp/deploy.sh << 'EOF'
@@ -172,11 +172,11 @@ pipeline {
                                 
                                 # Copy deployment script to EC2
                                 echo "Copying deployment script to EC2..."
-                                scp -o StrictHostKeyChecking=no /tmp/deploy.sh ubuntu@ec2-54-89-162-75:/tmp/deploy.sh
+                                scp -o StrictHostKeyChecking=no /tmp/deploy.sh ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com:/tmp/deploy.sh
                                 
                                 # Make script executable and run it
                                 echo "Running deployment script on EC2..."
-                                ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "chmod +x /tmp/deploy.sh && bash -x /tmp/deploy.sh"
+                                ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "chmod +x /tmp/deploy.sh && bash -x /tmp/deploy.sh"
                                 
                                 # Cleanup local script
                                 rm -f /tmp/deploy.sh
