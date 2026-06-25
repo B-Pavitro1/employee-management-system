@@ -65,36 +65,25 @@ pipeline {
             steps {
                 script {
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    def ec2Host = "ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com"
                     
                     // Use withEnv to ensure environment variables are passed correctly
                     withEnv(["DOCKER_IMAGE=${imageName}"]) {
                         sshagent(['ec2-deploy-key']) {
                             sh '''
                                 set -x  # Enable debug mode
-                                
-                                # Test SSH connection with timeout
-                                echo "Testing SSH connection..."
-                                if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=10 ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "echo 'SSH connected successfully'"; then
-                                    echo "❌ SSH connection failed!"
-                                    exit 1
-                                fi
-                                
-                                # Verify Docker is installed on EC2
-                                echo "Checking Docker installation on EC2..."
-                                ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "docker --version || echo 'Docker not installed'"
-                                
+
                                 # Create deployment script with proper escaping
                                 cat > /tmp/deploy.sh << 'EOF'
                                 #!/bin/bash
                                 set -ex  # Enable debug and exit on error
                                 
+                                # Source environment variables
+                                export DOCKER_IMAGE="${DOCKER_IMAGE}"
+                                
                                 echo "=== Deploying Employee Management System ==="
                                 echo "Image: ${DOCKER_IMAGE}"
                                 echo "Current user: $(whoami)"
-                                
-                                # Login to Docker Hub if needed (optional)
-                                # echo "Logging into Docker Hub..."
-                                # docker login -u your-username -p your-token
                                 
                                 # Stop old container
                                 echo "Stopping old container..."
@@ -108,7 +97,10 @@ pipeline {
                                 # Pull latest image with retry
                                 echo "Pulling latest image..."
                                 for i in {1..3}; do
-                                    docker pull ${DOCKER_IMAGE} && break || sleep 10
+                                    docker pull ${DOCKER_IMAGE} && break || {
+                                        echo "Pull attempt $i failed, retrying in 10 seconds..."
+                                        sleep 10
+                                    }
                                 done
                                 
                                 # Check if image was pulled successfully
@@ -126,22 +118,12 @@ pipeline {
                                     ${DOCKER_IMAGE}
                                 
                                 # Wait for container to start
-                                sleep 5
+                                sleep 10
                                 
-                                # Verify deployment
+                                # Check container status
                                 if docker ps | grep -q employee-management-app; then
-                                    echo "✅ Container deployed successfully!"
+                                    echo "✅ Container started successfully!"
                                     docker ps | grep employee-management-app
-                                    
-                                    # Test the application (optional)
-                                    echo "Testing application health..."
-                                    for i in {1..5}; do
-                                        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health | grep -q "200"; then
-                                            echo "✅ Application is healthy"
-                                            break
-                                        fi
-                                        sleep 5
-                                    done
                                 else
                                     echo "❌ Container deployment failed!"
                                     docker logs employee-management-app --tail 50
@@ -151,11 +133,11 @@ pipeline {
                                 
                                 # Copy deployment script to EC2
                                 echo "Copying deployment script to EC2..."
-                                scp -o StrictHostKeyChecking=no /tmp/deploy.sh ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com:/tmp/deploy.sh
+                                scp -o StrictHostKeyChecking=no /tmp/deploy.sh ${EC2_HOST}:/tmp/deploy.sh
                                 
                                 # Make script executable and run it
                                 echo "Running deployment script on EC2..."
-                                ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75.compute-1.amazonaws.com "chmod +x /tmp/deploy.sh && bash -x /tmp/deploy.sh"
+                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} "chmod +x /tmp/deploy.sh && bash -x /tmp/deploy.sh"
                                 
                                 # Cleanup local script
                                 rm -f /tmp/deploy.sh
