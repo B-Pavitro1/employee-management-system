@@ -70,7 +70,7 @@ pipeline {
                         sh """
                             # Test SSH connection first
                             echo "Testing SSH connection..."
-                            ssh -o StrictHostKeyChecking=no -v ubuntu@54-89-162-75 "echo 'SSH connected successfully'"
+                            ssh -o StrictHostKeyChecking=no -v ubuntu@ec2-54-89-162-75 "echo 'SSH connected successfully'"
                             
                             # Create deployment script
                             cat > /tmp/deploy.sh << 'EOF'
@@ -111,8 +111,8 @@ pipeline {
                             EOF
                             
                             # Copy and execute
-                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ubuntu@54-89-162-75:/tmp/deploy.sh
-                            ssh -o StrictHostKeyChecking=no ubuntu@54-89-162-75 "bash -x /tmp/deploy.sh"
+                            scp -o StrictHostKeyChecking=no /tmp/deploy.sh ubuntu@ec2-54-89-162-75:/tmp/deploy.sh
+                            ssh -o StrictHostKeyChecking=no ubuntu@ec2-54-89-162-75 "bash -x /tmp/deploy.sh"
                             
                             # Cleanup
                             rm -f /tmp/deploy.sh
