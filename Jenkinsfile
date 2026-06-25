@@ -87,8 +87,8 @@ pipeline {
                                 
                                 # Stop old container
                                 echo "Stopping old container..."
-                                docker stop employee-management-app 2>/dev/null || true
-                                docker rm employee-management-app 2>/dev/null || true
+                                docker stop employee-management-system 2>/dev/null || true
+                                docker rm employee-management-system 2>/dev/null || true
                                 
                                 # Clean up
                                 echo "Cleaning up unused Docker resources..."
@@ -112,7 +112,7 @@ pipeline {
                                 # Start new container
                                 echo "Starting new container..."
                                 docker run -d \
-                                    --name employee-management-app \
+                                    --name employee-management-system \
                                     -p 8080:8080 \
                                     --restart unless-stopped \
                                     ${DOCKER_IMAGE}
@@ -121,12 +121,12 @@ pipeline {
                                 sleep 10
                                 
                                 # Check container status
-                                if docker ps | grep -q employee-management-app; then
+                                if docker ps | grep -q employee-management-system; then
                                     echo "✅ Container started successfully!"
-                                    docker ps | grep employee-management-app
+                                    docker ps | grep employee-management-system
                                 else
                                     echo "❌ Container deployment failed!"
-                                    docker logs employee-management-app --tail 50
+                                    docker logs employee-management-system --tail 50
                                     exit 1
                                 fi
                                 EOF
