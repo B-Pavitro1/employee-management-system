@@ -65,7 +65,7 @@ pipeline {
             steps {
                 script {
                     def imageName = "${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    def EC2_HOST = "ubuntu@ec2-50-16-138-215.compute-1.amazonaws.com"
+                    def EC2_HOST = "ubuntu@ec2-100-52-238-46.compute-1.amazonaws.com"
                     
                     // Use withEnv to ensure environment variables are passed correctly
                     withEnv(["DOCKER_IMAGE=${imageName}"]) {
