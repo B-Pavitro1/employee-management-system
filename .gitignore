@@ -1,0 +1,5 @@
+.env
+target/
+full-error.log
+*.log
+docker-compose.yml

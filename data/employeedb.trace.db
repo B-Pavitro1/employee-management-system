@@ -1,3 +1,0 @@
-2026-05-07 14:02:39 jdbc[3]: exception
-org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "EMPLOYEES" not found (this database is empty); SQL statement:
-INSERT INTO employees (first_name, last_name, email, phone_number, department, position, salary, hire_date, active, created_at, updated_at) VALUES ('John', 'Doe', 'john.doe@example.com', '+1234567890', 'IT', 'Senior Developer', 85000.00, CURRENT_TIMESTAMP, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP), ('Jane', 'Smith', 'jane.smith@example.com', '+1234567891', 'HR', 'HR Manager', 75000.00, CURRENT_TIMESTAMP, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP), ('Bob', 'Johnson', 'bob.johnson@example.com', '+1234567892', 'Sales', 'Sales Executive', 65000.00, CURRENT_TIMESTAMP, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) [42104-214]
