@@ -20,13 +20,6 @@ pipeline {
             }
         }
 
-        stage('Check Java Version') {
-            steps {
-                sh 'java -version'
-                sh 'mvn -version'
-            }
-        }
-
         stage('Build with Maven') {
             steps {
                 script {
@@ -112,6 +105,7 @@ pipeline {
                                 # Start new container
                                 echo "Starting new container..."
                                 docker run -d \
+                                    --env-file /opt/employee-management-system/.env \
                                     --name employee-management-system \
                                     -p 8080:8080 \
                                     --restart unless-stopped \
