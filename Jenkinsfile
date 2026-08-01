@@ -107,7 +107,7 @@ pipeline {
                                 docker run -d \
                                     --env-file /opt/employee-management-system/.env \
                                     --name employee-management-system \
-                                    -p 8080:8080 \
+                                    -p 8081:8081 \
                                     --restart unless-stopped \
                                     ${DOCKER_IMAGE}
                                 
